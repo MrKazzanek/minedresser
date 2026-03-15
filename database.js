@@ -143,5 +143,17 @@ const myItems = [
             "url": ""
         },
         "textureUrl": "https://i.ibb.co/vCpxsNxP/cape-armlets-yearn-by-qozaworks-2.png"
+    },
+    {
+        "id": "cape_armlets_minecraft_experience_by_qozaworks_1",
+        "name": "Minecraft Experience",
+        "sectionId": "cape_armlets",
+        "type": "steve",
+        "description": "Armlets for the Minecraft Experience Cape given out at the IRL event",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/BFTQQmF/cape-armlets-minecraft-experience-by-qozaworks-1.png"
     }
 ];
