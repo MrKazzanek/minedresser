@@ -10,7 +10,7 @@ const myItems = [
     {
         "id": "hats_mcc-crown_by_mrkazanek_1",
         "name": "MCC Crown",
-        "sectionId": "hats-and-caps",
+        "sectionId": "hats",
         "type": "all",
         "description": "Crown inspired by the popular MCC server design",
         "author": {
