@@ -87,7 +87,7 @@ function applyTheme(themeName) {
     }
 }
 
-// 100% niezawodne pobieranie skina i rozpoznawanie modelu (Alex/Steve)
+// 100% NIEZAWODNA FUNKCJA - Ignoruje błędy API i bada strukturę pikseli w pliku obrazka
 async function fetchSkinFromUsername() {
     const username = document.getElementById('usernameInput').value.trim();
     if (!username) return;
@@ -96,49 +96,52 @@ async function fetchSkinFromUsername() {
     errorDisplay.innerText = "Downloading player skin…";
 
     try {
-        // Główne API: Ashcon (Nigdy nie ucina informacji o modelu)
-        const res = await fetch(`https://api.ashcon.app/mojang/v2/user/${username}`);
-        if (!res.ok) throw new Error("Ashcon API error");
+        const res = await fetch(`https://api.ashcon.app/mojang/v2/user/${username}?_=${Date.now()}`);
+        if (!res.ok) throw new Error("API error");
         const data = await res.json();
         
-        state.modelType = data.textures.slim ? 'alex' : 'steve';
+        const skinUrl = `data:image/png;base64,${data.textures.skin.data}`;
         
-        // Zaznaczenie radio buttona
+        // Skanujemy pobrany obraz
+        const img = await loadImage(skinUrl);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 64; 
+        tempCanvas.height = 64;
+        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        tempCtx.drawImage(img, 0, 0);
+
+        // Niezawodny test pikseli: Model Alex ma cieńszą rękę, przez co piksel (X:54, Y:20) musi być przezroczysty.
+        // Jeśli jest tam jakikolwiek kolor (alpha > 0), to znaczy że to na 100% Steve.
+        const alpha = tempCtx.getImageData(54, 20, 1, 1).data[3];
+        state.modelType = (alpha === 0) ? 'alex' : 'steve';
+
+        // Automatyczna zmiana radio buttona
         const radioBtn = document.querySelector(`input[name="modelType"][value="${state.modelType}"]`);
         if (radioBtn) radioBtn.checked = true;
 
-        const skinUrl = `data:image/png;base64,${data.textures.skin.data}`;
         errorDisplay.innerText = "";
         startGame(skinUrl); 
 
     } catch (e) {
-        // Zapasowe podejście: PlayerDB (Weryfikacja gracza) + Minotar (Analiza Pikseli)
+        // Zapasowe API w razie awarii pierwszego (też ze skanerem pikseli)
         try {
-            const checkRes = await fetch(`https://playerdb.co/api/player/minecraft/${username}`);
-            const checkData = await checkRes.json();
-            if (!checkData.success) throw new Error("Player not found");
-
             const skinUrl = `https://minotar.net/skin/${username}?_=${Date.now()}`;
             const img = await loadImage(skinUrl);
-
+            
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = 64; 
             tempCanvas.height = 64;
-            const tempCtx = tempCanvas.getContext('2d');
+            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
             tempCtx.drawImage(img, 0, 0);
-
-            // Analiza piksela (54, 20) odpowiadającego za fragment prawej ręki.
-            // Alex ma rękę o szerokości 3 pikseli (zostawia to miejsce puste/przezroczyste).
-            // Steve ma rękę o szerokości 4 pikseli (piksel jest zamalowany).
+            
             const alpha = tempCtx.getImageData(54, 20, 1, 1).data[3];
             state.modelType = (alpha === 0) ? 'alex' : 'steve';
-            
+
             const radioBtn = document.querySelector(`input[name="modelType"][value="${state.modelType}"]`);
             if (radioBtn) radioBtn.checked = true;
-            
+
             errorDisplay.innerText = "";
             startGame(tempCanvas.toDataURL('image/png'));
-
         } catch (fallbackErr) {
             errorDisplay.style.color = "var(--danger-color)";
             errorDisplay.innerText = "Error: No such player found (Premium).";
@@ -146,13 +149,32 @@ async function fetchSkinFromUsername() {
     }
 }
 
+// Przy wczytywaniu pliku z komputera też wymuszamy automatyczne rozpoznawanie (Alex/Steve) na bazie pikseli
 function loadSkinFromFile(e) {
     const file = e.target.files[0];
     if (!file) return;
-    state.modelType = document.querySelector('input[name="modelType"]:checked').value;
 
     const reader = new FileReader();
-    reader.onload = (event) => startGame(event.target.result);
+    reader.onload = async (event) => {
+        const result = event.target.result;
+        try {
+            const img = await loadImage(result);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 64; 
+            tempCanvas.height = 64;
+            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+            tempCtx.drawImage(img, 0, 0);
+            
+            const alpha = tempCtx.getImageData(54, 20, 1, 1).data[3];
+            state.modelType = (alpha === 0) ? 'alex' : 'steve';
+            
+            const radioBtn = document.querySelector(`input[name="modelType"][value="${state.modelType}"]`);
+            if (radioBtn) radioBtn.checked = true;
+        } catch (err) {
+            state.modelType = document.querySelector('input[name="modelType"]:checked').value;
+        }
+        startGame(result);
+    };
     reader.readAsDataURL(file);
 }
 
@@ -271,8 +293,10 @@ function renderWardrobe(filterText = "") {
     mySections.forEach(section => {
         const sectionItems = myItems.filter(item => {
             if (item.sectionId !== section.id) return false;
-            // Poprawne filtrowanie po typie
-            if (item.type !== 'all' && item.type !== state.modelType) return false;
+            
+            // Poprawione filtrowanie (Ignoruje wielkość liter np. jeśli w bazie wstawisz "Steve" a nie "steve")
+            const itemType = (item.type || 'all').toLowerCase();
+            if (itemType !== 'all' && itemType !== state.modelType) return false;
             
             const searchStr = filterText.toLowerCase();
             if (searchStr) {
