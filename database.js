@@ -47,5 +47,29 @@ const myItems = [
             "url": ""
         },
         "textureUrl": "https://i.ibb.co/8nCHt8Sw/cape-armlets-mojang-office-by-qozaworks-2.png"
+    },
+    {
+        "id": "cape_armlets_mcc_by_qozaworks_1",
+        "name": "MCC",
+        "sectionId": "cape_armlets",
+        "type": "steve",
+        "description": "Red and gold armlets matching the MCC Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/fYBcr9ZC/cape-armlets-mcc-by-qozaworks-1.png"
+    },
+    {
+        "id": "cape_armlets_mcc_by_qozaworks_2",
+        "name": "MCC",
+        "sectionId": "cape_armlets",
+        "type": "alex",
+        "description": "Red and gold armlets matching the MCC Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/Wpv9rXm5/cape-armlets-mcc-by-qozaworks-2.png"
     }
 ];
