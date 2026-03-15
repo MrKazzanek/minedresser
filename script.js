@@ -10,7 +10,7 @@ let mainViewer = null;
 let itemViewers = [];
 
 // Zmienne do kontroli asynchronicznych operacji (Zapobiegają błędom i powielaniu)
-let currentRenderId = 0; 
+let currentRenderId = 0;
 let textureUpdateId = 0;
 let searchTimeout = null;
 
@@ -28,29 +28,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('skinFileInput').addEventListener('change', loadSkinFromFile);
     document.getElementById('btnResetSkin').addEventListener('click', resetApp);
     document.getElementById('btnClearClothes').addEventListener('click', clearAllClothes);
-    
+
     // FIX: Debouncing dla wyszukiwarki głównej (Odświeża dopiero jak przestaniesz pisać)
     document.getElementById('searchInput').addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => filterWardrobe(e), 300);
     });
-    
+
     document.getElementById('btnDownloadCombined').addEventListener('click', downloadCombinedSkin);
     document.getElementById('themeBtn').addEventListener('click', toggleTheme);
 
     const sidebar = document.getElementById('categorySidebar');
     const mainSearch = document.getElementById('mainSearchBar');
-    
+
     document.getElementById('btnToggleSidebar').addEventListener('click', () => {
         sidebar.classList.add('open');
         mainSearch.classList.add('search-hidden'); 
     });
-    
+
     document.getElementById('btnCloseSidebar').addEventListener('click', () => {
         sidebar.classList.remove('open');
         mainSearch.classList.remove('search-hidden'); 
     });
-    
+
     // Wyszukiwarka kategorii bez opóźnienia, bo działa na gotowym DOM
     document.getElementById('searchCategoryInput').addEventListener('input', filterCategories);
 
@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initTheme() { applyTheme(state.theme); }
+
 function toggleTheme() {
     const themes = ['system', 'light', 'dark'];
     let currentIndex = themes.indexOf(state.theme);
@@ -71,6 +72,7 @@ function toggleTheme() {
     localStorage.setItem('theme', state.theme);
     applyTheme(state.theme);
 }
+
 function applyTheme(themeName) {
     const label = document.getElementById('themeLabel');
     const icon = document.querySelector('#themeBtn i');
@@ -88,27 +90,31 @@ function applyTheme(themeName) {
     }
 }
 
+// NAPRAWIONA FUNKCJA POBIERANIA SKINA Z NICKU (Z wykorzystaniem PlayerDB)
 async function fetchSkinFromUsername() {
     const username = document.getElementById('usernameInput').value.trim();
     if (!username) return;
     const errorDisplay = document.getElementById('initError');
     errorDisplay.style.color = "var(--text-color)";
     errorDisplay.innerText = "Downloading player skin…";
-    
+
     try {
-        const resUuid = await fetch(`https://api.minetools.eu/uuid/${username}`);
-        const dataUuid = await resUuid.json();
-        if (dataUuid.status !== "OK") throw new Error("Not found");
+        const res = await fetch(`https://playerdb.co/api/player/minecraft/${username}`);
+        if (!res.ok) throw new Error("PlayerDB API error");
+        const data = await res.json();
+        
+        if (!data.success || !data.data || !data.data.player) throw new Error("Not found");
 
-        const resProfile = await fetch(`https://api.minetools.eu/profile/${dataUuid.id}`);
-        const dataProfile = await resProfile.json();
+        const rawProp = data.data.player.properties.find(p => p.name === "textures");
+        if (!rawProp) throw new Error("No texture data");
 
-        const rawProp = dataProfile.raw.properties.find(p => p.name === "textures");
         const textureJson = JSON.parse(atob(rawProp.value));
         const skinData = textureJson.textures.SKIN;
 
         state.modelType = (skinData.metadata && skinData.metadata.model === "slim") ? 'alex' : 'steve';
-        document.querySelector(`input[name="modelType"][value="${state.modelType}"]`).checked = true;
+        
+        const radioBtn = document.querySelector(`input[name="modelType"][value="${state.modelType}"]`);
+        if (radioBtn) radioBtn.checked = true;
 
         errorDisplay.innerText = "";
         startGame(skinData.url); 
@@ -120,8 +126,25 @@ async function fetchSkinFromUsername() {
             if (!res.ok) throw new Error();
             const data = await res.json();
             
-            state.modelType = data.textures.slim ? 'alex' : 'steve';
-            document.querySelector(`input[name="modelType"][value="${state.modelType}"]`).checked = true;
+            let isSlim = false;
+            
+            if (data.textures && data.textures.raw && data.textures.raw.value) {
+                try {
+                    const decoded = JSON.parse(atob(data.textures.raw.value));
+                    if (decoded.textures.SKIN.metadata && decoded.textures.SKIN.metadata.model === "slim") {
+                        isSlim = true;
+                    }
+                } catch(err) {
+                    isSlim = data.textures.slim === true;
+                }
+            } else if (data.textures && data.textures.slim) {
+                isSlim = data.textures.slim === true;
+            }
+            
+            state.modelType = isSlim ? 'alex' : 'steve';
+            
+            const radioBtn = document.querySelector(`input[name="modelType"][value="${state.modelType}"]`);
+            if (radioBtn) radioBtn.checked = true;
             
             const skinUrl = `data:image/png;base64,${data.textures.skin.data}`;
             errorDisplay.innerText = "";
@@ -137,7 +160,7 @@ function loadSkinFromFile(e) {
     const file = e.target.files[0];
     if (!file) return;
     state.modelType = document.querySelector('input[name="modelType"]:checked').value;
-    
+
     const reader = new FileReader();
     reader.onload = (event) => startGame(event.target.result);
     reader.readAsDataURL(file);
@@ -146,8 +169,8 @@ function loadSkinFromFile(e) {
 function startGame(skinUrl) {
     state.baseSkinUrl = skinUrl;
     initModal.classList.add('hidden');
-    appContainer.style.display = 'flex'; 
-    
+    appContainer.style.display = 'flex';
+
     setTimeout(() => {
         initMainViewer();
         updateSkinTextures();
@@ -158,12 +181,12 @@ function startGame(skinUrl) {
 
 function resetApp() {
     initModal.classList.remove('hidden');
-    appContainer.style.display = 'none'; 
+    appContainer.style.display = 'none';
     state.equippedItems = [];
     document.getElementById('skinFileInput').value = "";
     document.getElementById('usernameInput').value = "";
     document.getElementById('initError').innerText = "";
-    
+
     // Pełne czyszczenie pamięci
     currentRenderId++;
     textureUpdateId++;
@@ -175,13 +198,13 @@ function resetApp() {
 function clearAllClothes() {
     state.equippedItems = [];
     updateSkinTextures();
-    updateCardStylesDOM(); 
+    updateCardStylesDOM();
 }
 
 function initMainViewer() {
     const container = document.getElementById('main3dViewer');
     container.innerHTML = '';
-    
+
     const w = container.clientWidth || 300;
     const h = container.clientHeight || 300;
 
@@ -190,7 +213,7 @@ function initMainViewer() {
         skin: state.baseSkinUrl,
         model: state.modelType === 'alex' ? 'slim' : 'default'
     });
-    
+
     mainViewer.autoRotate = false;
     changeAnimation(state.currentAnim);
     container.appendChild(mainViewer.canvas);
@@ -199,7 +222,7 @@ function initMainViewer() {
 function changeAnimation(animType) {
     if(!mainViewer) return;
     state.currentAnim = animType;
-    mainViewer.animation = null; 
+    mainViewer.animation = null;
     if (animType === 'walk') mainViewer.animation = new skinview3d.WalkingAnimation();
     else if (animType === 'run') mainViewer.animation = new skinview3d.RunningAnimation();
     else mainViewer.animation = new skinview3d.IdleAnimation();
@@ -209,7 +232,7 @@ function changeAnimation(animType) {
 async function updateSkinTextures() {
     const thisUpdateId = ++textureUpdateId;
     mergeCtx.clearRect(0, 0, 64, 64);
-    
+
     try {
         const baseImg = await loadImage(state.baseSkinUrl);
         if (thisUpdateId !== textureUpdateId) return; // Przerwij, jeśli w międzyczasie kliknięto coś innego
@@ -250,7 +273,7 @@ function renderWardrobe(filterText = "") {
     const thisRenderId = ++currentRenderId; // Oznaczamy nowe renderowanie
     const container = document.getElementById('wardrobeContent');
     container.innerHTML = '';
-    
+
     // Bezpieczne czyszczenie WebGL
     itemViewers.forEach(v => {
         if(v.canvas && v.canvas.parentNode) v.canvas.parentNode.removeChild(v.canvas);
@@ -325,7 +348,7 @@ async function createMiniViewer(containerId, item, cardElement, thisRenderId) {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = 64; tempCanvas.height = 64;
     const tCtx = tempCanvas.getContext('2d');
-    
+
     try {
         const bImg = await loadImage(state.baseSkinUrl);
         if (thisRenderId !== currentRenderId) return; // Przerwij po pobraniu (asynchroniczność)
@@ -345,12 +368,12 @@ async function createMiniViewer(containerId, item, cardElement, thisRenderId) {
         skin: tempCanvas.toDataURL('image/png'),
         model: state.modelType === 'alex' ? 'slim' : 'default'
     });
-    
+
     viewer.autoRotate = false;
     viewer.autoRotateSpeed = 0.8;
     cardElement.addEventListener('mouseenter', () => viewer.autoRotate = true);
     cardElement.addEventListener('mouseleave', () => viewer.autoRotate = false);
-    
+
     viewer.controls.enablePan = false; 
     viewer.controls.minDistance = 20; 
     viewer.controls.maxDistance = 60; 
@@ -390,7 +413,7 @@ function renderSidebarCategories() {
         li.innerText = sec.name;
         li.dataset.name = sec.name.toLowerCase();
         li.onclick = () => {
-            const el = document.getElementById(`sec-${sec.id}`);
+            const el = document.getElementById(`sec-${sec.id}`); // FIX: dodane znaki ` wokół zmiennej
             if(el) {
                 const panel = document.querySelector('.right-panel');
                 panel.scrollTo({ top: el.offsetTop - panel.offsetTop - 20, behavior: 'smooth' });
@@ -414,7 +437,7 @@ function filterWardrobe(e) { renderWardrobe(e.target.value); }
 
 function toggleEquip(item, section) {
     const index = state.equippedItems.findIndex(i => i.id === item.id);
-    
+
     if (index > -1) {
         state.equippedItems.splice(index, 1);
     } else {
@@ -426,20 +449,20 @@ function toggleEquip(item, section) {
         }
         state.equippedItems.push(item);
     }
-    
+
     updateSkinTextures();
-    updateCardStylesDOM(); 
+    updateCardStylesDOM();
 }
 
 function renderEquippedList() {
     const list = document.getElementById('equippedList');
     list.innerHTML = '';
-    
+
     if (state.equippedItems.length === 0) {
         list.innerHTML = '<span class="empty-msg">No clothes on character</span>';
         return;
     }
-    
+
     state.equippedItems.forEach(item => {
         const chip = document.createElement('div');
         chip.className = 'chip';
