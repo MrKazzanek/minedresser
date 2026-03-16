@@ -251,5 +251,53 @@ const myItems = [
             "url": ""
         },
         "textureUrl": "https://i.ibb.co/sdWFWXWx/cape-armlets-copper-by-qozaworks-2.png"
+    },
+    {
+        "id": "cape_armlets_copper_with_oxidation_by_qozaworks_1",
+        "name": "Copper with Oxidation",
+        "sectionId": "cape_armlets",
+        "type": "steve",
+        "description": "Less shiny copper armlets matching the Copper Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/DDYdC5B6/cape-armlets-copper-with-oxidation-by-qozaworks-1.png"
+    },
+    {
+        "id": "cape_armlets_copper_with_oxidation_by_qozaworks_2",
+        "name": "Copper with Oxidation",
+        "sectionId": "cape_armlets",
+        "type": "alex",
+        "description": "Less shiny copper armlets matching the Copper Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/zhBrW1TT/cape-armlets-copper-with-oxidation-by-qozaworks-2.png"
+    },
+    {
+        "id": "cape_armlets_cherry_blossom_by_qozaworks_1",
+        "name": "Cherry Blossom",
+        "sectionId": "cape_armlets",
+        "type": "steve",
+        "description": "Flower-themed armlets matching the Cherry Blossom Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/HDPnzF93/cape-armlets-cherry-blossom-by-qozaworks-1.png"
+    },
+    {
+        "id": "cape_armlets_zombie_horse_by_qozaworks_1",
+        "name": "Zombie Horse",
+        "sectionId": "cape_armlets",
+        "type": "steve",
+        "description": "Undead armlets matching the Zombie Horse Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/rKNZ96QT/cape-armlets-zombie-horse-by-qozaworks-1.png"
     }
 ];
