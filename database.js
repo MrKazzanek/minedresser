@@ -227,5 +227,29 @@ const myItems = [
             "url": ""
         },
         "textureUrl": "https://i.ibb.co/tM91382z/cape-armlets-founders-by-qozaworks-2.png"
+    },
+    {
+        "id": "cape_armlets_copper_by_qozaworks_1",
+        "name": "Copper",
+        "sectionId": "cape_armlets",
+        "type": "steve",
+        "description": "Shiny copper armlets matching the Copper Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/Q3ms0tx4/cape-armlets-copper-by-qozaworks-1.png"
+    },
+    {
+        "id": "cape_armlets_copper_by_qozaworks_2",
+        "name": "Copper",
+        "sectionId": "cape_armlets",
+        "type": "alex",
+        "description": "Shiny copper armlets matching the Copper Cape",
+        "author": {
+            "name": "QozaWorks",
+            "url": ""
+        },
+        "textureUrl": "https://i.ibb.co/sdWFWXWx/cape-armlets-copper-by-qozaworks-2.png"
     }
 ];
