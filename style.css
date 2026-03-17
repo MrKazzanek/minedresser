@@ -281,7 +281,7 @@ footer {
     #mainSearchBar { width: 100%; }
     #mainSearchBar:focus-within { width: 100%; }
 
-    /* POPRAWKA DLA TELEFONÓW: MENU KATEGORII JEST PRZYKLEJONE DO EKRANU (FIXED) ZAMIAST STRONY */
+   
     .category-sidebar { 
         position: fixed; 
         top: 0; 
